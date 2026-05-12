@@ -1,15 +1,15 @@
 'use client'
 
 import { useState } from 'react'
+import SplashScreen from '@/components/SplashScreen'
 import GroomingSelector from '@/components/GroomingSelector'
 import DrumRollPicker from '@/components/DrumRollPicker'
 import TravelTimeSelector from '@/components/TravelTimeSelector'
 import ResultCard from '@/components/ResultCard'
-import PrepTimer from '@/components/PrepTimer'
 
-type Step = 'grooming' | 'time' | 'travel' | 'result' | 'timer'
+type Step = 'splash' | 'grooming' | 'time' | 'travel' | 'result'
 
-const STEP_ORDER: Step[] = ['grooming', 'time', 'travel', 'result', 'timer']
+const STEP_ORDER: Step[] = ['splash', 'grooming', 'time', 'travel', 'result']
 
 function getDefaultTime() {
   const d = new Date()
@@ -22,7 +22,7 @@ function getDefaultTime() {
 }
 
 export default function Home() {
-  const [step, setStep] = useState<Step>('grooming')
+  const [step, setStep] = useState<Step>('splash')
   const [groomingLevel, setGroomingLevel] = useState<number | null>(null)
   const [groomingMinutes, setGroomingMinutes] = useState(30)
 
@@ -35,13 +35,12 @@ export default function Home() {
   const currentStepIdx = STEP_ORDER.indexOf(step)
 
   function goBack() {
-    if (currentStepIdx > 0) setStep(STEP_ORDER[currentStepIdx - 1])
+    if (currentStepIdx > 1) setStep(STEP_ORDER[currentStepIdx - 1])
   }
 
   function getAppointmentDate(): Date {
     const d = new Date()
     d.setHours(apptHour, apptMinute, 0, 0)
-    // If the appointment time seems to be in the past (>2h ago), assume tomorrow
     if (d.getTime() < Date.now() - 2 * 60 * 60 * 1000) {
       d.setDate(d.getDate() + 1)
     }
@@ -53,37 +52,33 @@ export default function Home() {
     return new Date(appt.getTime() - ((travelMinutes ?? 0) + groomingMinutes) * 60 * 1000)
   }
 
-  const showBackBtn = currentStepIdx > 0 && step !== 'timer'
+  const showBackBtn = currentStepIdx > 1
+
+  if (step === 'splash') {
+    return <SplashScreen onStart={() => setStep('grooming')} />
+  }
 
   return (
-    <main className="min-h-svh flex flex-col">
-      <div className="w-full max-w-sm mx-auto px-4 pt-10 pb-12 flex flex-col gap-6 flex-1">
+    <main className="min-h-full flex flex-col" style={{ backgroundImage: "url('/bg.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
 
-        {/* Header */}
-        <div className="text-center">
-          <div className="text-5xl mb-2 select-none">👸</div>
-          <h1 className="text-2xl font-black text-rose-500 tracking-tight">공주는 지각쟁이</h1>
-          <p className="text-xs text-pink-300 mt-1">오늘도 제때 도착해볼까요?</p>
+      {/* Step progress bar */}
+      <div className="w-full px-[26px]" style={{ paddingTop: 20 }}>
+        <div className="w-full flex gap-1.5" style={{ height: 6 }}>
+          {(['grooming', 'time', 'travel', 'result'] as Step[]).map((s, i) => {
+            const active = STEP_ORDER.indexOf(step) >= i + 1
+            return (
+              <div
+                key={s}
+                className="flex-1 rounded-full transition-all duration-300"
+                style={{ background: active ? '#101010' : '#F2F4F6' }}
+              />
+            )
+          })}
         </div>
+      </div>
 
-        {/* Step indicator (not on timer) */}
-        {step !== 'timer' && (
-          <div className="flex items-center justify-center gap-1.5">
-            {(['grooming', 'time', 'travel', 'result'] as Step[]).map((s, i) => {
-              const active = STEP_ORDER.indexOf(step) >= i
-              return (
-                <div
-                  key={s}
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    active ? 'bg-rose-300 w-8' : 'bg-pink-100 w-2'
-                  }`}
-                />
-              )
-            })}
-          </div>
-        )}
+      <div className="w-full max-w-sm mx-auto pb-12 flex flex-col gap-6 flex-1" style={{ paddingLeft: 26, paddingRight: 26, paddingTop: 80 }}>
 
-        {/* Content area */}
         <div className="flex-1">
           {step === 'grooming' && (
             <GroomingSelector
@@ -98,32 +93,21 @@ export default function Home() {
 
           {step === 'time' && (
             <div className="animate-fade-in-up">
-              <h2 className="text-center text-xl font-bold text-rose-500 mb-1">약속 시간이 언제예요?</h2>
-              <p className="text-center text-sm text-pink-400 mb-4">스크롤해서 시간을 맞춰요 🕐</p>
+              <h2 className="text-xl font-bold mb-6" style={{ color: '#191F28' }}>약속 시간이 언제예요?</h2>
 
-              <div className="rounded-3xl bg-white/60 backdrop-blur border border-pink-100 shadow-sm p-6">
+              <div className="rounded-3xl bg-white border border-stone-100 shadow-sm p-6">
                 <DrumRollPicker
                   hour={apptHour}
                   minute={apptMinute}
                   onHourChange={setApptHour}
                   onMinuteChange={setApptMinute}
                 />
-
-                <div className="text-center mt-4 text-sm text-pink-400">
-                  선택된 시간:{' '}
-                  <span className="font-bold text-rose-500 text-base">
-                    {apptHour < 12 ? '오전' : '오후'}{' '}
-                    {apptHour === 0 ? 12 : apptHour > 12 ? apptHour - 12 : apptHour}:
-                    {String(apptMinute).padStart(2, '0')}
-                  </span>
-                </div>
               </div>
 
               <button
                 onClick={() => setStep('travel')}
-                className="w-full mt-4 rounded-2xl bg-gradient-to-r from-rose-300 to-pink-400
-                           text-white font-bold text-lg py-4 shadow-lg shadow-rose-100
-                           hover:from-rose-400 hover:to-pink-500 active:scale-[0.98] transition-all duration-200"
+                className="w-full mt-4 rounded-2xl text-white font-bold text-lg py-4 active:scale-[0.98] transition-all duration-200"
+                style={{ background: '#191F28' }}
               >
                 다음 →
               </button>
@@ -131,50 +115,30 @@ export default function Home() {
           )}
 
           {step === 'travel' && (
-            <div>
-              <TravelTimeSelector
-                selected={travelMinutes}
-                onSelect={(m) => {
-                  setTravelMinutes(m)
-                  setStep('result')
-                }}
-              />
-            </div>
+            <TravelTimeSelector
+              selected={travelMinutes}
+              onSelect={(m) => {
+                setTravelMinutes(m)
+                setStep('result')
+              }}
+            />
           )}
 
-          {step === 'result' && travelMinutes !== null && groomingLevel !== null && (
+          {step === 'result' && travelMinutes !== null && (
             <ResultCard
-              groomingLevel={groomingLevel}
               groomingMinutes={groomingMinutes}
               appointmentTime={getAppointmentDate()}
               travelMinutes={travelMinutes}
               departureTime={getDepartureTime()}
-              onStartTimer={() => setStep('timer')}
             />
-          )}
-
-          {step === 'timer' && travelMinutes !== null && (
-            <div>
-              <div className="text-center mb-4">
-                <p className="text-xl font-black text-rose-500">준비 타이머 ⏱️</p>
-                <p className="text-xs text-pink-400 mt-1">3분 전에 알림을 보내드릴게요</p>
-              </div>
-              <PrepTimer
-                departureTime={getDepartureTime()}
-                groomingMinutes={groomingMinutes}
-                travelMinutes={travelMinutes ?? 0}
-                onBack={() => setStep('result')}
-              />
-            </div>
           )}
         </div>
 
-        {/* Back button */}
         {showBackBtn && (
           <button
             onClick={goBack}
-            className="self-start flex items-center gap-1 text-pink-400 hover:text-rose-400
-                       text-sm font-medium transition-colors duration-200"
+            className="self-start flex items-center gap-1 text-sm font-medium transition-colors duration-200"
+            style={{ color: '#8B95A1' }}
           >
             ← 뒤로가기
           </button>

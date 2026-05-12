@@ -4,20 +4,19 @@ import { useRef, useEffect, useCallback } from 'react'
 
 const ITEM_H = 44
 const VISIBLE = 5
-const PAD = ITEM_H * Math.floor(VISIBLE / 2) // 88
+const PAD = ITEM_H * Math.floor(VISIBLE / 2)
 
 interface ColumnProps {
   items: string[]
   selectedIndex: number
   onSelect: (i: number) => void
-  width?: string
+  width?: number
 }
 
-function Column({ items, selectedIndex, onSelect, width = 'w-16' }: ColumnProps) {
+function Column({ items, selectedIndex, onSelect, width = 64 }: ColumnProps) {
   const ref = useRef<HTMLDivElement>(null)
   const scrolling = useRef(false)
 
-  // Scroll to selected on mount and external change
   useEffect(() => {
     if (ref.current && !scrolling.current) {
       ref.current.scrollTop = selectedIndex * ITEM_H
@@ -40,32 +39,20 @@ function Column({ items, selectedIndex, onSelect, width = 'w-16' }: ColumnProps)
     onSelect(i)
   }
 
-  const containerH = ITEM_H * VISIBLE
-
   return (
-    <div className={`relative ${width}`} style={{ height: containerH }}>
-      {/* Top fade */}
+    <div className="relative" style={{ width, height: ITEM_H * VISIBLE }}>
       <div
         className="absolute inset-x-0 top-0 pointer-events-none z-10"
-        style={{
-          height: PAD,
-          background: 'linear-gradient(to bottom, #fff0f5 0%, transparent 100%)',
-        }}
+        style={{ height: PAD, background: 'linear-gradient(to bottom, #ffffff 0%, transparent 100%)' }}
       />
-      {/* Bottom fade */}
       <div
         className="absolute inset-x-0 bottom-0 pointer-events-none z-10"
-        style={{
-          height: PAD,
-          background: 'linear-gradient(to top, #fff0f5 0%, transparent 100%)',
-        }}
+        style={{ height: PAD, background: 'linear-gradient(to top, #ffffff 0%, transparent 100%)' }}
       />
-      {/* Center highlight */}
       <div
-        className="absolute inset-x-1 rounded-xl bg-rose-100/70 border border-rose-200 pointer-events-none z-0"
-        style={{ top: PAD, height: ITEM_H }}
+        className="absolute inset-x-1 rounded-xl pointer-events-none z-0"
+        style={{ top: PAD, height: ITEM_H, background: '#F2F4F6' }}
       />
-
       <div
         ref={ref}
         className="h-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide relative z-[5]"
@@ -82,11 +69,12 @@ function Column({ items, selectedIndex, onSelect, width = 'w-16' }: ColumnProps)
               onClick={() => scrollTo(i)}
             >
               <span
-                className="transition-all duration-150 font-medium"
+                className="transition-all duration-150"
                 style={{
-                  fontSize: dist === 0 ? 22 : dist === 1 ? 17 : 13,
-                  color: dist === 0 ? '#e11d6a' : dist === 1 ? '#f9a8c4' : '#fce7f3',
+                  fontSize: dist === 0 ? 20 : dist === 1 ? 16 : 13,
+                  color: dist === 0 ? '#191F28' : dist === 1 ? '#8B95A1' : '#D1D6DB',
                   fontWeight: dist === 0 ? 700 : 400,
+                  fontFamily: "'Nanum Gothic', sans-serif",
                 }}
               >
                 {item}
@@ -99,35 +87,51 @@ function Column({ items, selectedIndex, onSelect, width = 'w-16' }: ColumnProps)
   )
 }
 
-const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'))
+const HOURS_12 = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'))
 const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'))
+const AMPM = ['오전', '오후']
 
 interface Props {
-  hour: number
-  minute: number // actual minute (0,5,10,...,55)
+  hour: number      // 0-23
+  minute: number    // 0, 5, 10, ..., 55
   onHourChange: (h: number) => void
   onMinuteChange: (m: number) => void
 }
 
 export default function DrumRollPicker({ hour, minute, onHourChange, onMinuteChange }: Props) {
-  const minuteIndex = Math.round(minute / 5)
+  const ampmIndex = hour >= 12 ? 1 : 0
+  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour
+  const hourIndex = displayHour - 1  // 0-11
+
+  const handleHourSelect = (i: number) => {
+    const h12 = i + 1
+    const h24 = ampmIndex === 0
+      ? (h12 === 12 ? 0 : h12)
+      : (h12 === 12 ? 12 : h12 + 12)
+    onHourChange(h24)
+  }
+
+  const handleAmpmSelect = (i: number) => {
+    const h12 = hourIndex + 1
+    const h24 = i === 0
+      ? (h12 === 12 ? 0 : h12)
+      : (h12 === 12 ? 12 : h12 + 12)
+    onHourChange(h24)
+  }
 
   return (
-    <div className="flex items-center justify-center gap-2 py-2">
-      <Column
-        items={HOURS}
-        selectedIndex={hour}
-        onSelect={onHourChange}
-        width="w-16"
-      />
-      <span className="text-rose-400 text-3xl font-bold mb-1 select-none">:</span>
-      <Column
-        items={MINUTES}
-        selectedIndex={minuteIndex}
-        onSelect={(i) => onMinuteChange(i * 5)}
-        width="w-16"
-      />
-      <span className="text-rose-400 text-sm font-medium self-end mb-3 ml-1">오전/오후</span>
+    <div className="flex items-center justify-center gap-1 py-2">
+      <Column items={AMPM}     selectedIndex={ampmIndex}              onSelect={handleAmpmSelect} width={72} />
+      <Divider />
+      <Column items={HOURS_12} selectedIndex={hourIndex}              onSelect={handleHourSelect} width={64} />
+      <Divider />
+      <Column items={MINUTES}  selectedIndex={Math.round(minute / 5)} onSelect={(i) => onMinuteChange(i * 5)} width={64} />
     </div>
+  )
+}
+
+function Divider() {
+  return (
+    <span className="text-2xl font-bold select-none" style={{ color: '#D1D6DB', marginBottom: 4 }}>:</span>
   )
 }

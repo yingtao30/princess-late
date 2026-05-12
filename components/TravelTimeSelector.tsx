@@ -3,10 +3,10 @@
 import { useState } from 'react'
 
 const PRESETS = [
-  { label: '15분', sub: '도보 🚶‍♀️', minutes: 15 },
-  { label: '30분', sub: '지하철 🚇', minutes: 30 },
-  { label: '1시간', sub: '버스 🚌', minutes: 60 },
-  { label: '1시간 30분', sub: '기차 🚂', minutes: 90 },
+  { label: '15분', sub: '도보', minutes: 15 },
+  { label: '30분', sub: '지하철', minutes: 30 },
+  { label: '1시간', sub: '버스', minutes: 60 },
+  { label: '1시간 30분', sub: '기차', minutes: 90 },
 ]
 
 interface Props {
@@ -30,8 +30,7 @@ export default function TravelTimeSelector({ selected, onSelect }: Props) {
 
   return (
     <div className="animate-fade-in-up">
-      <h2 className="text-center text-xl font-bold text-rose-500 mb-1">이동 시간이 얼마나 걸려요?</h2>
-      <p className="text-center text-sm text-pink-400 mb-6">대충 맞춰도 괜찮아요 🗺️</p>
+      <h2 className="text-xl font-bold mb-6" style={{ color: '#191F28' }}>이동 시간이 얼마나 걸려요?</h2>
 
       <div className="flex flex-col gap-3">
         {PRESETS.map((p) => {
@@ -41,40 +40,34 @@ export default function TravelTimeSelector({ selected, onSelect }: Props) {
               key={p.minutes}
               onClick={() => { setCustomMode(false); onSelect(p.minutes) }}
               className={`
-                flex items-center justify-between rounded-2xl border-2 px-5 py-3.5
+                flex items-center justify-between rounded-2xl border-2 px-5 py-4
                 transition-all duration-200
                 ${isSelected
-                  ? 'bg-rose-100 border-rose-400 shadow-md scale-[1.02]'
-                  : 'bg-white/60 border-pink-200 hover:bg-pink-50 hover:border-pink-300'
+                  ? 'bg-rose-50 border-rose-400 shadow-md scale-[1.02]'
+                  : 'bg-white border-stone-200 hover:border-stone-300 hover:shadow-sm'
                 }
               `}
             >
-              <span className={`font-bold text-base ${isSelected ? 'text-rose-600' : 'text-rose-400'}`}>
-                {p.label}
-              </span>
-              <span className="text-sm text-pink-300">{p.sub}</span>
-              {isSelected && <span className="ml-2 text-rose-400">✓</span>}
+              <p className="font-bold text-base" style={{ color: '#191F28' }}>{p.label}</p>
+              <p className="text-sm" style={{ color: '#8B95A1' }}>{p.sub}</p>
             </button>
           )
         })}
 
-        {/* Custom input */}
         <button
           onClick={() => setCustomMode(true)}
           className={`
-            flex items-center justify-between rounded-2xl border-2 px-5 py-3.5
+            flex items-center justify-between rounded-2xl border-2 px-5 py-4
             transition-all duration-200
             ${(customMode || isCustomSelected)
-              ? 'bg-rose-100 border-rose-400 shadow-md'
-              : 'bg-white/60 border-pink-200 hover:bg-pink-50 hover:border-pink-300'
+              ? 'bg-rose-50 border-rose-400 shadow-md'
+              : 'bg-white border-stone-200 hover:border-stone-300 hover:shadow-sm'
             }
           `}
         >
-          <span className={`font-bold text-base ${(customMode || isCustomSelected) ? 'text-rose-600' : 'text-rose-400'}`}>
-            직접 입력 ✏️
-          </span>
+          <p className="font-bold text-base" style={{ color: '#191F28' }}>직접 입력</p>
           {isCustomSelected && (
-            <span className="text-sm text-rose-500 font-medium">{selected}분</span>
+            <p className="text-sm font-medium" style={{ color: '#6B7684' }}>{selected}분</p>
           )}
         </button>
 
@@ -88,14 +81,15 @@ export default function TravelTimeSelector({ selected, onSelect }: Props) {
               value={customVal}
               onChange={(e) => setCustomVal(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCustomSubmit()}
-              className="flex-1 rounded-xl border-2 border-pink-200 bg-white/70 px-4 py-2.5 text-rose-600
-                         placeholder-pink-200 focus:outline-none focus:border-rose-400 font-medium"
+              className="flex-1 rounded-xl border-2 border-stone-200 bg-white px-4 py-2.5
+                         focus:outline-none focus:border-rose-400 font-medium"
+              style={{ color: '#191F28' }}
               autoFocus
             />
             <button
               onClick={handleCustomSubmit}
-              className="rounded-xl bg-rose-300 hover:bg-rose-400 text-white font-bold px-4 py-2.5
-                         transition-colors duration-200"
+              className="rounded-xl text-white font-bold px-4 py-2.5 transition-colors duration-200"
+              style={{ background: '#f43f5e' }}
             >
               확인
             </button>

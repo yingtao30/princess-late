@@ -38,9 +38,7 @@ export default function PrepTimer({ departureTime, groomingMinutes, travelMinute
 
   useEffect(() => {
     if ('Notification' in window) {
-      Notification.requestPermission().then((p) => {
-        notifGranted.current = p === 'granted'
-      })
+      Notification.requestPermission().then((p) => { notifGranted.current = p === 'granted' })
     }
     const id = setInterval(() => setNow(new Date()), 1000)
     return () => clearInterval(id)
@@ -52,14 +50,11 @@ export default function PrepTimer({ departureTime, groomingMinutes, travelMinute
     : now >= prepStartTime ? 'preparing'
     : 'waiting'
 
-  // Fire notification once on alert phase
   useEffect(() => {
     if (phase === 'alert' && !notifiedRef.current) {
       notifiedRef.current = true
       if (notifGranted.current) {
-        new Notification('👸 출발 3분 전!', {
-          body: '지금 당장 나가세요! 공주님!',
-        })
+        new Notification('출발 3분 전!', { body: '지금 당장 나가세요!' })
       }
     }
   }, [phase])
@@ -75,64 +70,59 @@ export default function PrepTimer({ departureTime, groomingMinutes, travelMinute
   return (
     <div className="animate-fade-in-up space-y-5">
 
-      {/* Phase banner */}
       {phase === 'waiting' && (
-        <div className="rounded-2xl bg-pink-50 border border-pink-200 p-4 text-center">
-          <p className="text-rose-400 font-medium">준비 시작까지</p>
-          <p className="text-3xl font-black text-rose-500 mt-1">{formatHMS(msUntilPrep)}</p>
-          <p className="text-xs text-pink-300 mt-1">{formatTime(prepStartTime)}에 준비를 시작하세요</p>
+        <div className="rounded-2xl p-4 text-center border" style={{ background: '#F9FAFB', borderColor: '#F2F4F6' }}>
+          <p className="text-sm font-medium" style={{ color: '#8B95A1' }}>준비 시작까지</p>
+          <p className="text-3xl font-black mt-1" style={{ color: '#191F28' }}>{formatHMS(msUntilPrep)}</p>
+          <p className="text-xs mt-1" style={{ color: '#B0B8C1' }}>{formatTime(prepStartTime)}에 준비를 시작하세요</p>
         </div>
       )}
 
       {phase === 'preparing' && (
-        <div className="rounded-2xl bg-gradient-to-br from-rose-50 to-pink-100 border border-rose-200 p-4 text-center">
-          <p className="text-rose-400 font-medium">💅 지금 준비 중!</p>
-          <p className="text-3xl font-black text-rose-500 mt-1">{formatHMS(msUntilDep)}</p>
-          <p className="text-xs text-pink-400 mt-1">출발까지 남은 시간</p>
+        <div className="rounded-2xl p-4 text-center border" style={{ background: '#FFF0F5', borderColor: '#FECDD3' }}>
+          <p className="text-sm font-medium" style={{ color: '#6B7684' }}>지금 준비 중!</p>
+          <p className="text-3xl font-black mt-1" style={{ color: '#191F28' }}>{formatHMS(msUntilDep)}</p>
+          <p className="text-xs mt-1" style={{ color: '#8B95A1' }}>출발까지 남은 시간</p>
         </div>
       )}
 
       {phase === 'alert' && (
-        <div className="rounded-2xl bg-rose-400 border-2 border-rose-500 p-5 text-center relative overflow-hidden">
-          <div className="absolute inset-0 rounded-2xl bg-rose-300/30 animate-ping-slow" />
-          <p className="text-white font-bold text-lg relative">🚨 출발 3분 전!</p>
+        <div className="rounded-2xl p-5 text-center relative overflow-hidden" style={{ background: '#f43f5e' }}>
+          <div className="absolute inset-0 rounded-2xl animate-ping-slow" style={{ background: 'rgba(255,255,255,0.2)' }} />
+          <p className="text-white font-bold text-lg relative">출발 3분 전!</p>
           <p className="text-4xl font-black text-white mt-1 relative">{formatHMS(msUntilDep)}</p>
-          <p className="text-rose-100 text-sm mt-1 relative animate-wiggle inline-block">
-            지금 당장 나가요!!
-          </p>
+          <p className="text-rose-100 text-sm mt-1 relative animate-wiggle inline-block">지금 당장 나가요!</p>
         </div>
       )}
 
       {phase === 'departed' && (
-        <div className="rounded-2xl bg-red-100 border-2 border-red-300 p-4 text-center">
-          <p className="text-3xl mb-1">😱</p>
-          <p className="text-red-500 font-bold">이미 출발했어야 해요!</p>
-          <p className="text-2xl font-black text-red-400 mt-1">{formatHMS(-msUntilDep)} 지났어요</p>
+        <div className="rounded-2xl p-4 text-center border" style={{ background: '#FFF2F2', borderColor: '#FFCDD2' }}>
+          <p className="text-2xl font-black mt-1" style={{ color: '#E53935' }}>{formatHMS(-msUntilDep)} 지났어요</p>
+          <p className="font-bold mt-1" style={{ color: '#E53935' }}>이미 출발했어야 해요!</p>
         </div>
       )}
 
       {/* Progress bar */}
       {phase !== 'waiting' && phase !== 'departed' && (
         <div>
-          <div className="flex justify-between text-xs text-pink-400 mb-1.5 px-1">
+          <div className="flex justify-between text-xs mb-1.5 px-1" style={{ color: '#8B95A1' }}>
             <span>준비 시작 {formatTime(prepStartTime)}</span>
             <span>출발 {formatTime(departureTime)}</span>
           </div>
-          <div className="h-3 rounded-full bg-pink-100 overflow-hidden">
+          <div className="h-2.5 rounded-full overflow-hidden" style={{ background: '#F2F4F6' }}>
             <div
-              className={`h-full rounded-full transition-all duration-1000 ${
-                phase === 'alert'
-                  ? 'bg-gradient-to-r from-rose-400 to-red-400'
-                  : 'bg-gradient-to-r from-rose-300 to-pink-400'
-              }`}
-              style={{ width: `${progress}%` }}
+              className="h-full rounded-full transition-all duration-1000"
+              style={{
+                width: `${progress}%`,
+                background: phase === 'alert' ? '#f43f5e' : '#191F28',
+              }}
             />
           </div>
-          <p className="text-center text-xs text-pink-300 mt-1">{Math.round(progress)}% 완료</p>
+          <p className="text-center text-xs mt-1" style={{ color: '#B0B8C1' }}>{Math.round(progress)}% 완료</p>
         </div>
       )}
 
-      {/* Status pills */}
+      {/* Info pills */}
       <div className="grid grid-cols-2 gap-3">
         <InfoPill label="약속 시간" value={formatTime(new Date(departureTime.getTime() + (groomingMinutes + travelMinutes) * 60 * 1000))} />
         <InfoPill label="출발 시간" value={formatTime(departureTime)} accent />
@@ -140,10 +130,10 @@ export default function PrepTimer({ departureTime, groomingMinutes, travelMinute
 
       <button
         onClick={onBack}
-        className="w-full rounded-xl border-2 border-pink-200 bg-white/60 text-pink-400
-                   font-medium py-3 hover:bg-pink-50 transition-colors duration-200"
+        className="w-full rounded-xl py-3 font-medium text-sm transition-colors duration-200 border"
+        style={{ background: '#ffffff', borderColor: '#F2F4F6', color: '#6B7684' }}
       >
-        ← 다시 설정하기
+        다시 설정하기
       </button>
     </div>
   )
@@ -151,9 +141,9 @@ export default function PrepTimer({ departureTime, groomingMinutes, travelMinute
 
 function InfoPill({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div className={`rounded-xl p-3 text-center border ${accent ? 'bg-rose-50 border-rose-200' : 'bg-white/60 border-pink-100'}`}>
-      <p className="text-xs text-pink-400">{label}</p>
-      <p className={`font-bold text-sm mt-0.5 ${accent ? 'text-rose-500' : 'text-rose-700'}`}>{value}</p>
+    <div className="rounded-xl p-3 text-center border" style={{ background: accent ? '#FFF0F5' : '#F9FAFB', borderColor: accent ? '#FECDD3' : '#F2F4F6' }}>
+      <p className="text-xs" style={{ color: '#8B95A1' }}>{label}</p>
+      <p className="font-bold text-sm mt-0.5" style={{ color: '#191F28' }}>{value}</p>
     </div>
   )
 }
