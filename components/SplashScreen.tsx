@@ -1,5 +1,7 @@
 'use client'
 
+import { track } from '@/lib/mixpanel'
+
 export default function SplashScreen({ onStart }: { onStart: () => void }) {
   return (
     <div className="h-full relative overflow-hidden">
@@ -20,7 +22,7 @@ export default function SplashScreen({ onStart }: { onStart: () => void }) {
       {/* Button — fixed to bottom */}
       <div className="absolute left-0 right-0 flex justify-center" style={{ bottom: 98, zIndex: 10 }}>
         <button
-          onClick={onStart}
+          onClick={() => { track('splash_cta_clicked'); onStart() }}
           className="text-white transition-all active:scale-[0.98] active:opacity-80"
           style={{
             width: 340,

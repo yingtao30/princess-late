@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { track } from '@/lib/mixpanel'
 import SplashScreen from '@/components/SplashScreen'
 import GroomingSelector from '@/components/GroomingSelector'
 import DrumRollPicker from '@/components/DrumRollPicker'
@@ -19,6 +20,43 @@ function getDefaultTime() {
     d.setMinutes(d.getMinutes() - 60)
   }
   return { hour: d.getHours(), minute: d.getMinutes() }
+}
+
+function ResultStep({
+  groomingLevel, groomingMinutes, appointmentTime, travelMinutes, departureTime, onRestart,
+}: {
+  groomingLevel: number | null
+  groomingMinutes: number
+  appointmentTime: Date
+  travelMinutes: number
+  departureTime: Date
+  onRestart: () => void
+}) {
+  useEffect(() => {
+    track('result_viewed', {
+      grooming_level: groomingLevel,
+      grooming_minutes: groomingMinutes,
+      travel_minutes: travelMinutes,
+    })
+  }, [])
+
+  return (
+    <div className="flex flex-col gap-6">
+      <ResultCard
+        groomingMinutes={groomingMinutes}
+        appointmentTime={appointmentTime}
+        travelMinutes={travelMinutes}
+        departureTime={departureTime}
+      />
+      <button
+        onClick={onRestart}
+        className="self-start text-sm font-medium transition-colors duration-200"
+        style={{ color: '#8B95A1' }}
+      >
+        ← 처음으로
+      </button>
+    </div>
+  )
 }
 
 export default function Home() {
@@ -52,7 +90,7 @@ export default function Home() {
     return new Date(appt.getTime() - ((travelMinutes ?? 0) + groomingMinutes) * 60 * 1000)
   }
 
-  const showBackBtn = currentStepIdx > 1
+  const showBackBtn = currentStepIdx > 1 && step !== 'result'
 
   if (step === 'splash') {
     return <SplashScreen onStart={() => setStep('grooming')} />
@@ -125,11 +163,18 @@ export default function Home() {
           )}
 
           {step === 'result' && travelMinutes !== null && (
-            <ResultCard
+            <ResultStep
+              groomingLevel={groomingLevel}
               groomingMinutes={groomingMinutes}
               appointmentTime={getAppointmentDate()}
               travelMinutes={travelMinutes}
               departureTime={getDepartureTime()}
+              onRestart={() => {
+                track('session_restarted')
+                setStep('grooming')
+                setGroomingLevel(null)
+                setTravelMinutes(null)
+              }}
             />
           )}
         </div>
