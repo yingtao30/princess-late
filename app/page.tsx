@@ -11,6 +11,20 @@ import ResultCard from '@/components/ResultCard'
 type Step = 'splash' | 'grooming' | 'time' | 'travel' | 'result'
 
 const STEP_ORDER: Step[] = ['splash', 'grooming', 'time', 'travel', 'result']
+const PROGRESS_STEPS: Step[] = ['grooming', 'time', 'travel', 'result']
+
+const CTA_STYLE: React.CSSProperties = {
+  width: 340,
+  height: 66,
+  borderRadius: 7,
+  background: '#101010',
+  color: '#ffffff',
+  fontSize: 16,
+  fontWeight: 400,
+  fontFamily: "'Nanum Gothic', sans-serif",
+  letterSpacing: '0.04em',
+  flexShrink: 0,
+}
 
 function getDefaultTime() {
   const d = new Date()
@@ -23,14 +37,13 @@ function getDefaultTime() {
 }
 
 function ResultStep({
-  groomingLevel, groomingMinutes, appointmentTime, travelMinutes, departureTime, onRestart,
+  groomingLevel, groomingMinutes, appointmentTime, travelMinutes, departureTime,
 }: {
   groomingLevel: number | null
   groomingMinutes: number
   appointmentTime: Date
   travelMinutes: number
   departureTime: Date
-  onRestart: () => void
 }) {
   useEffect(() => {
     track('result_viewed', {
@@ -41,21 +54,12 @@ function ResultStep({
   }, [])
 
   return (
-    <div className="flex flex-col gap-6">
-      <ResultCard
-        groomingMinutes={groomingMinutes}
-        appointmentTime={appointmentTime}
-        travelMinutes={travelMinutes}
-        departureTime={departureTime}
-      />
-      <button
-        onClick={onRestart}
-        className="self-start text-sm font-medium transition-colors duration-200"
-        style={{ color: '#8B95A1' }}
-      >
-        ← 처음으로
-      </button>
-    </div>
+    <ResultCard
+      groomingMinutes={groomingMinutes}
+      appointmentTime={appointmentTime}
+      travelMinutes={travelMinutes}
+      departureTime={departureTime}
+    />
   )
 }
 
@@ -67,14 +71,9 @@ export default function Home() {
   const defaultTime = getDefaultTime()
   const [apptHour, setApptHour] = useState(defaultTime.hour)
   const [apptMinute, setApptMinute] = useState(defaultTime.minute)
-
   const [travelMinutes, setTravelMinutes] = useState<number | null>(null)
 
   const currentStepIdx = STEP_ORDER.indexOf(step)
-
-  function goBack() {
-    if (currentStepIdx > 1) setStep(STEP_ORDER[currentStepIdx - 1])
-  }
 
   function getAppointmentDate(): Date {
     const d = new Date()
@@ -90,105 +89,119 @@ export default function Home() {
     return new Date(appt.getTime() - ((travelMinutes ?? 0) + groomingMinutes) * 60 * 1000)
   }
 
-  const showBackBtn = currentStepIdx > 1 && step !== 'result'
+  function handleProgressClick(s: Step) {
+    const targetIdx = STEP_ORDER.indexOf(s)
+    if (targetIdx <= currentStepIdx && targetIdx >= 1) {
+      if (s === 'grooming') {
+        track('session_restarted')
+        setGroomingLevel(null)
+        setTravelMinutes(null)
+      }
+      setStep(s)
+    }
+  }
 
   if (step === 'splash') {
     return <SplashScreen onStart={() => setStep('grooming')} />
   }
 
-  return (
-    <main className="min-h-full flex flex-col" style={{ backgroundImage: "url('/bg.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+  // CTA config per step
+  const cta: { label: string; onClick: () => void; disabled?: boolean } | null =
+    step === 'time' ? { label: '다음', onClick: () => setStep('travel') }
+    : step === 'travel' ? { label: '출발 시간 보기', onClick: () => setStep('result'), disabled: travelMinutes === null }
+    : step === 'result' ? { label: '새로 설정하기', onClick: () => { track('session_restarted'); setStep('grooming'); setGroomingLevel(null); setTravelMinutes(null) } }
+    : null
 
+  return (
+    <main
+      className="min-h-full flex flex-col relative"
+      style={{ backgroundImage: "url('/bg.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}
+    >
       {/* Step progress bar */}
       <div className="w-full px-[26px]" style={{ paddingTop: 20 }}>
         <div className="w-full flex gap-1.5" style={{ height: 6 }}>
-          {(['grooming', 'time', 'travel', 'result'] as Step[]).map((s, i) => {
+          {PROGRESS_STEPS.map((s, i) => {
             const active = STEP_ORDER.indexOf(step) >= i + 1
+            const clickable = active
             return (
               <div
                 key={s}
                 className="flex-1 rounded-full transition-all duration-300"
-                style={{ background: active ? '#101010' : '#F2F4F6' }}
+                style={{ background: active ? '#101010' : '#F2F4F6', cursor: clickable ? 'pointer' : 'default' }}
+                onClick={() => clickable && handleProgressClick(s)}
               />
             )
           })}
         </div>
       </div>
 
-      <div className="w-full max-w-sm mx-auto pb-12 flex flex-col gap-6 flex-1" style={{ paddingLeft: 26, paddingRight: 26, paddingTop: 80 }}>
+      {/* Content */}
+      <div
+        className="w-full max-w-sm mx-auto flex-1"
+        style={{ paddingLeft: 26, paddingRight: 26, paddingTop: 80, paddingBottom: cta ? 180 : 40 }}
+      >
+        {step === 'grooming' && (
+          <GroomingSelector
+            selected={groomingLevel}
+            onSelect={(level, mins) => {
+              setGroomingLevel(level)
+              setGroomingMinutes(mins)
+              setStep('time')
+            }}
+          />
+        )}
 
-        <div className="flex-1">
-          {step === 'grooming' && (
-            <GroomingSelector
-              selected={groomingLevel}
-              onSelect={(level, mins) => {
-                setGroomingLevel(level)
-                setGroomingMinutes(mins)
-                setStep('time')
-              }}
-            />
-          )}
-
-          {step === 'time' && (
-            <div className="animate-fade-in-up">
-              <h2 className="text-xl font-bold mb-6" style={{ color: '#191F28' }}>약속 시간이 언제예요?</h2>
-
-              <div className="rounded-3xl bg-white border border-stone-100 shadow-sm p-6">
-                <DrumRollPicker
-                  hour={apptHour}
-                  minute={apptMinute}
-                  onHourChange={setApptHour}
-                  onMinuteChange={setApptMinute}
-                />
-              </div>
-
-              <button
-                onClick={() => setStep('travel')}
-                className="w-full mt-4 rounded-2xl text-white font-bold text-lg py-4 active:scale-[0.98] transition-all duration-200"
-                style={{ background: '#191F28' }}
-              >
-                다음 →
-              </button>
+        {step === 'time' && (
+          <div className="animate-fade-in-up">
+            <h2 className="text-xl font-bold mb-6" style={{ color: '#191F28' }}>약속 시간이 언제예요?</h2>
+            <div className="rounded-3xl bg-white border border-stone-100 shadow-sm p-6">
+              <DrumRollPicker
+                hour={apptHour}
+                minute={apptMinute}
+                onHourChange={setApptHour}
+                onMinuteChange={setApptMinute}
+              />
             </div>
-          )}
+          </div>
+        )}
 
-          {step === 'travel' && (
-            <TravelTimeSelector
-              selected={travelMinutes}
-              onSelect={(m) => {
-                setTravelMinutes(m)
-                setStep('result')
-              }}
-            />
-          )}
+        {step === 'travel' && (
+          <TravelTimeSelector
+            selected={travelMinutes}
+            onSelect={setTravelMinutes}
+          />
+        )}
 
-          {step === 'result' && travelMinutes !== null && (
-            <ResultStep
-              groomingLevel={groomingLevel}
-              groomingMinutes={groomingMinutes}
-              appointmentTime={getAppointmentDate()}
-              travelMinutes={travelMinutes}
-              departureTime={getDepartureTime()}
-              onRestart={() => {
-                track('session_restarted')
-                setStep('grooming')
-                setGroomingLevel(null)
-                setTravelMinutes(null)
-              }}
-            />
-          )}
-        </div>
-
-        {showBackBtn && (
-          <button
-            onClick={goBack}
-            className="self-start flex items-center gap-1 text-sm font-medium transition-colors duration-200"
-            style={{ color: '#8B95A1' }}
-          >
-            ← 뒤로가기
-          </button>
+        {step === 'result' && travelMinutes !== null && (
+          <ResultStep
+            groomingLevel={groomingLevel}
+            groomingMinutes={groomingMinutes}
+            appointmentTime={getAppointmentDate()}
+            travelMinutes={travelMinutes}
+            departureTime={getDepartureTime()}
+          />
         )}
       </div>
+
+      {/* Bottom CTA button — fixed to bottom, same style as splash */}
+      {cta && (
+        <div
+          className="absolute left-0 right-0 flex justify-center"
+          style={{ bottom: 98 }}
+        >
+          <button
+            onClick={cta.onClick}
+            disabled={cta.disabled}
+            className="transition-all active:scale-[0.98] active:opacity-80"
+            style={{
+              ...CTA_STYLE,
+              background: cta.disabled ? '#D1D6DB' : '#101010',
+            }}
+          >
+            {cta.label}
+          </button>
+        </div>
+      )}
     </main>
   )
 }

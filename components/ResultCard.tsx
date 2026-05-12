@@ -22,7 +22,7 @@ export default function ResultCard({ departureTime }: Props) {
   return (
     <div className="animate-fade-in-up flex flex-col items-start justify-center h-full" style={{ paddingTop: 40 }}>
       <p className="text-base font-medium mb-3" style={{ color: '#8B95A1' }}>
-        {isPast ? '이미 지났어요!' : '출발 준비 시간'}
+        {isPast ? '이미 지났어요!' : '공주님,'}
       </p>
       <p
         className="font-black leading-tight"
